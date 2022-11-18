@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple JSON CMS UI</title>
+  <style>
+    [un-cloak] {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-white" un-cloak>
+
+  <div x-data="cms()" class="px-8 py-6 container mx-auto font-sans">
+    <div class="flex items-center justify-between">
+      <h1 class="tracking-wider font-extralight text-3xl">CMS</h1>
+      <div class="-mt-4 mr-2 flex space-y-4 items-center">
+        <label class="font-extralight text-right w-24 mt-4 text-slate-400">CMS Key:</label>
+        <input type="text" class="ml-4 px-3 py-2 bg-slate-100 font-mono w-32 border border-slate-300 rounded-md" x-model="cmsKey" @keydown="handleKeydown()">
+        <label class="ml-4 font-extralight text-right w-24 mt-4 text-slate-400">Password:</label>
+        <input type="text" class="ml-4 px-3 py-2 bg-slate-100 font-mono w-32 border border-slate-300 rounded-md" x-model="password" @keydown="handleKeydown()">
+        <button x-bind:disabled="!password || password === null" class="ml-4 px-4 py-2 border-none text-slate-400 bg-white hover:bg-slate-100 uppercase cursor-pointer tracking-wider font-extralight rounded-full" x-on:click="save()">
+          <div class="flex items-center justify-center">
+            <svg class="w-4 h-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            <div class="ml-3">Save</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex h-vh">
+      <!-- SIDE MENU -->
+      <div class="w-96">
+        <template x-for="key in Object.keys(data).sort()">
+          <div x-bind:class="currentSelection === key ? 'bg-slate-200' : ''" class="mt-4 px-3 py-1 hover:bg-slate-100 rounded-md text-xl flex items-center justify-between cursor-pointer" x-on:click="currentSelection = (currentSelection === key ? null : key)">
+            <div class="ml-1 flex items-center text-slate-500">
+              <template x-if="Array.isArray(data[key])">
+                <svg class="h-4 w-4 mr-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+                </svg>
+              </template>
+
+              <template x-if="!Array.isArray(data[key])">
+                <svg class="h-4 w-4 mr-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                </svg>
+              </template>
+
+              <span class="font-extralight" x-text="key"></span>
+            </div>
+            <div class="relative inline-block text-left group">
+              <button type="button" class="inline-flex w-full justify-center border-none bg-transparent px-2 py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 cursor-pointer" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                <svg class="h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                </svg>
+              </button>
+
+              <div class="group-hover:block hidden absolute right-0 z-10 mt-0 w-32 origin-top-right rounded-md bg-slate-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                <div class="" role="none">
+                  <!-- Active: "text-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+                  <a href="#" class="text-slate-500 flex items-center px-4 py-2 text-sm hover:bg-slate-200 decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-0" x-on:click.stop="renamingKey = key">
+                    <svg class="h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                    </svg>
+                    <span class="ml-2">Rename</span>
+                  </a>
+                  <a href="#" class="text-slate-500 px-4 py-2 text-sm hover:bg-slate-200 flex items-center decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-1" x-on:click.stop="copyingKey = key">
+                    <svg class="h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                    <span class="ml-2">Copy</span>
+                  </a>
+                  <a href="#" class="text-slate-500 hover:bg-red-500 hover:text-white flex items-center px-4 py-2 text-sm decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-2" x-on:click.stop="deleteKey(key)">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span class="ml-2">Delete</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <hr class="mt-4 mb-2 border border-slate-200" />
+
+        <button class="mt-2 px-4 py-2 bg-white border-none hover:bg-slate-100 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingList=true">
+          <div class="flex items-center justify-center group">
+            <svg class="h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+            </svg>
+            <div class="ml-3 text-slate-400">Add a list</div>
+          </div>
+        </button>
+
+        <button class="mt-2 px-4 py-2 bg-white border-none hover:bg-slate-100 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingThing=true">
+          <div class="flex items-center justify-center group">
+            <svg class="h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+            </svg>
+            <div class="ml-3 text-slate-400">Add a thing</div>
+          </div>
+        </button>
+
+        <button class="mt-2 px-4 py-2 bg-white border-none hover:bg-slate-100 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="inspectingJSON=true;currentSelection=null;">
+          <div class="flex items-center justify-center group">
+            <svg class="h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+            </svg>
+            <div class="ml-3 text-slate-400">See the raw data</div>
+          </div>
+        </button>
+      </div>
+      <!-- END SIDE MENu -->
+
+      <!-- MAIN CONTENT -->
+      <div class="-mt-1 w-full ml-2 px-4 min-h-screen rounded-md">
+        <div x-show="currentSelection">
+          <div class="flex items-center justify-between">
+            <h2 class="-ml-2 text-2xl font-light text-slate-600 flex items-center space-x-4 tracking-wider">
+              <template x-if="Array.isArray(data[currentSelection])">
+                <svg class="-mb-1 h-5 w-5 mr-2 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+                </svg>
+              </template>
+
+              <template x-if="!Array.isArray(data[currentSelection])">
+                <svg class="-mb-1 h-5 w-5 mr-2 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                </svg>
+              </template>
+              <span x-text="currentSelection"></span>
+            </h2>
+            <!-- LIST ACTIONS -->
+            <template x-if="Array.isArray(data[currentSelection])">
+              <div>
+                <button class="px-4 py-2 hover:bg-slate-100 border-none text-slate-400 bg-white uppercase cursor-pointer tracking-wider font-light rounded-full" x-on:click="addItem()">
+                  <div class="flex items-center justify-center group">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="ml-3">Add list item</div>
+                  </div>
+                </button>
+
+                <button class="ml-2 px-4 py-2 hover:bg-slate-100 border-none text-slate-400 bg-white uppercase cursor-pointer tracking-wider font-light rounded-full" x-on:click="addingKeyToList=true">
+                  <div class="flex items-center justify-center group">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div class="ml-3">Add attribute to all items</div>
+                  </div>
+                </button>
+              </div>
+            </template>
+            <!-- END LIST ACTIONS -->
+
+            <!-- THING ACTIONS -->
+            <template x-if="!Array.isArray(data[currentSelection])">
+              <button class="px-4 py-2 border-none bg-white hover:bg-slate-100 text-slate-400 uppercase cursor-pointer tracking-wider font-light rounded-full" x-on:click="addingKeyToThing=true">
+                <div class="flex items-center justify-center group">
+                  <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div class="ml-3">Add attribute</div>
+                </div>
+              </button>
+            </template>
+            <!-- END THING ACTIONS -->
+          </div>
+
+          <hr class="mt-0 mb-8 border border-slate-300" />
+        </div>
+
+        <!-- START LIST -->
+        <template x-if="Array.isArray(data[currentSelection])">
+          <div>
+            <template x-for="(item, index) in data[currentSelection]">
+              <div>
+                <template x-for="key in Object.keys(item)">
+                  <div class="mt-4 mb-0 flex items-start">
+                    <div class="flex-1 ml-2">
+                      <label class="ml-0 px-2 text-slate-400" x-text="key"></label>
+                      <textarea class="relative px-2 py-2 font-mono w-full bg-slate-50 border border-slate-300 rounded-md" x-model="item[key]"></textarea>
+                    </div>
+
+                    <div class="ml-5 mt-4 relative inline-block group">
+                      <button type="button" class="inline-flex w-full justify-center border-none bg-transparent px-2 py-2 text-sm font-medium text-gray-700 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 cursor-pointer" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                        </svg>
+                      </button>
+
+                      <div class="group-hover:block hidden absolute right-0 z-10 mt-0 w-32 origin-top-right rounded-md bg-slate-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                        <div class="py-1" role="none">
+                          <a href="#" class="text-slate-500 flex items-center px-4 py-2 text-sm hover:bg-slate-200 decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-2" x-on:click.stop="zoomIn(index, key)">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                            </svg>
+                            <span class="ml-2">Zoom In</span>
+                          </a>
+
+                          <a href="#" class="text-slate-500 hover:bg-red-500 hover:text-white flex items-center px-4 py-2 text-sm decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-2" x-on:click.stop="deleteListKey(key)">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="ml-2">Delete</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div class="flex justify-end mr-9">
+                  <button class="mt-1 ml-4 px-4 py-2 text-slate-400 bg-white border-none hover:bg-slate-100 uppercase cursor-pointer tracking-wider font-light rounded-full" x-on:click="deleteItem()">
+                    <div class="flex items-center justify-center group">
+                      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div class="ml-3">Delete item</div>
+                    </div>
+                  </button>
+                </div>
+
+                <hr class="mt-2 mb-8 border border-slate-300" />
+              </div>
+            </template>
+          </div>
+        </template>
+        <!-- END LIST -->
+
+        <!-- START THING -->
+        <template x-if="currentSelection && !Array.isArray(data[currentSelection])">
+          <div class="mt-4">
+            <template x-for="(key, index) in Object.keys(data[currentSelection]).sort()">
+              <div class="mb-4 flex items-start">
+                <div class="flex-1 ml-2">
+                  <label class="ml-0 px-2 text-slate-400" x-text="key"></label>
+                  <textarea class="relative px-2 py-1 text-slate-500 font-mono w-full border border-slate-300 bg-slate-100 rounded-md" x-model="data[currentSelection][key]"></textarea>
+                </div>
+
+                <div class="ml-5 mt-4 relative inline-block text-left group">
+                  <button type="button" class="inline-flex w-full justify-center border-none bg-transparent px-2 py-2 text-sm font-medium text-slate-400 rounded-full hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100 cursor-pointer" id="menu-button" aria-expanded="true" aria-haspopup="true">
+                    <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                    </svg>
+                  </button>
+
+                  <div class="group-hover:block hidden absolute right-0 z-10 mt-0 w-32 origin-top-right rounded-md bg-slate-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+                    <div class="py-1" role="none">
+                      <a href="#" class="text-slate-500 flex items-center px-4 py-2 text-sm hover:bg-slate-200 decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-2" x-on:click="zoomIn(null, key)">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6" />
+                        </svg>
+                        <span class="ml-2">Zoom In</span>
+                      </a>
+
+                      <a href="#" class="text-slate-500 flex items-center px-4 py-2 text-sm hover:bg-red-500 hover:text-white decoration-none cursor-pointer" role="menuitem" tabindex="-1" id="menu-item-2" x-on:click.stop="deleteThingKey(key)">
+                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="ml-2">Delete</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+        <!-- END THING -->
+      </div>
+      <!-- END MAIN CONTENT -->
+    </div>
+
+    <!-- RENAME KEY -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="renamingKey !== null">
+      <div class="bg-white px-8 pt-6 pb-4 w-96 h-auto rounded-2xl">
+        <div class="text-sm uppercase tracking-wider">Rename</div>
+        <div class="mt-4 pr-4">
+          <label class="text-slate-500">Current Name</label>
+          <input type="text" class="px-2 py-2 font-mono w-full border border-slate-300 rounded-md" x-model="renamingKey">
+        </div>
+
+        <div class="mt-4 pr-4">
+          <label class="text-slate-500">New Name</label>
+          <input type="text" class="px-2 py-2 font-mono w-full border border-slate-300 rounded-md" x-model="newKeyName">
+        </div>
+
+        <div class="mt-6 mb-2 flex justify-between">
+          <button class="px-4 py-2 border-none bg-white text-slate-400 hover:bg-slate-100 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="renameKey()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+            </svg>
+            <span class="ml-2">Rename</span>
+          </button>
+
+          <button class="px-4 py-2 border-none bg-white text-slate-400 hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="renamingKey=null">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END RENAME KEY -->
+
+    <!-- COPY KEY -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="copyingKey !== null">
+      <div class="bg-white px-8 pt-8 pb-6 w-96 h-auto rounded-2xl">
+        <div class="text-sm tracking-wider"><span class="uppercase">COPYING:</span> <span x-text="copyingKey"></span></div>
+        <div class="mt-4 pr-4">
+          <label class="text-slate-500">New Name</label>
+          <input type="text" class="px-2 py-2 font-mono w-full border border-slate-300 rounded-md" x-model="newKeyName">
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-100 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="copyKey()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+            </svg>
+            <span class="ml-2">Copy</span>
+          </button>
+
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-100 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="copyingKey=null">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END COPY KEY -->
+
+    <!-- ADD KEY TO LIST -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="addingKeyToList === true">
+      <div class="bg-white px-8 pt-8 pb-8 w-96 h-auto rounded-2xl">
+        <div class="mt-1 pr-4">
+          <label class="text-slate-400 text-sm uppercase tracking-wider">Attribute name</label>
+          <input type="text" class="px-2 py-2 border border-slate-300 font-mono w-full border border-slate-300 rounded-md" x-model="newKeyName">
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="currentSelection && addKeyToList()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="ml-2">Add attribute</span>
+          </button>
+
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-100 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingKeyToList=false">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END ADD KEY TO LIST -->
+
+    <!-- ADD KEY TO THING -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="addingKeyToThing === true">
+      <div class="bg-white px-8 pt-8 pb-8 w-96 h-auto rounded-2xl">
+        <div class="mt-1 pr-4">
+          <label class="text-slate-400 text-sm uppercase tracking-wider">Attribute name</label>
+          <input type="text" class="px-2 py-2 bg-slate-100 border border-slate-300 font-mono w-full border rounded-md" x-model="newKeyName">
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="currentSelection && addKeyToThing()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="ml-2">Add attribute</span>
+          </button>
+
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingKeyToThing=false">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END ADD KEY TO THING -->
+
+    <!-- ADD LIST -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="addingList === true">
+      <div class="bg-white px-8 pt-8 pb-8 w-96 h-auto rounded-2xl">
+        <div class="mt-1 pr-4">
+          <label class="text-slate-400 text-sm uppercase tracking-wider">List name</label>
+          <input type="text" class="px-2 py-2 bg-slate-100 font-mono w-full border border-slate-300 rounded-md" x-model="newListName">
+        </div>
+
+        <div class="mt-4 pr-4">
+          <label class="text-slate-400 mt-4 text-sm uppercase tracking-wider">List item attributes (separated by commas)</label>
+          <input type="text" class="px-2 py-2 bg-slate-100 font-mono w-full border border-slate-300 rounded-md" x-model="newListAttributes">
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button class="px-4 py-2 border-none bg-white text-slate-400 hover:bg-slate-200 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addList()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="ml-2">Add list</span>
+          </button>
+
+          <button class="px-4 py-2 border-none bg-white text-slate-400 hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingList=false">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END ADD LIST -->
+
+    <!-- ADD THING -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="addingThing === true">
+      <div class="bg-white px-8 pt-8 pb-8 w-96 h-auto rounded-2xl">
+        <div class="mt-1 pr-4">
+          <label class="text-slate-400 text-sm uppercase tracking-wider">Thing name</label>
+          <input type="text" class="px-2 py-2 border border-slate-300 font-mono w-full border rounded-md" x-model="newThingName">
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 flex items-center uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addThing()">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="ml-2">Add thing</span>
+          </button>
+
+          <button class="px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="addingThing=false">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END ADD THING -->
+
+    <!-- ZOOM IN -->
+    <div class="bg-white px-8 py-8 w-full h-full absolute inset-0 flex items-center justify-center" x-show="zoomedIn === true">
+      <div class="fixed bg-white w-full h-full rounded-2xl">
+        <textarea class="px-4 py-4 bg-slate-100 resize-none font-mono block border border-slate-300 rounded-lg" style="width: calc(100% - 96px); height: calc(100% - 108px)" x-model="zoomedInValue"></textarea>
+        <div class="mt-1 px-16 flex justify-end">
+          <button class="cursor-pointer mr-1 px-4 py-2 bg-white border-none text-slate-400 hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="zoomOut()">
+            Go back
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END ZOOM IN -->
+
+    <!-- INSPECT JSON -->
+    <div class="bg-white px-8 py-8 w-full h-full absolute inset-0 flex items-center justify-center" x-show="inspectingJSON === true">
+      <div class="fixed bg-white w-full h-full rounded-2xl">
+        <textarea DISABLED=DISABLED class="px-4 py-4 bg-slate-100 resize-none font-mono block border border-slate-300 rounded-lg" style="width: calc(100% - 96px); height: calc(100% - 108px)" x-model="JSON.stringify(data, null, 2)"></textarea>
+        <div class="mt-1 px-16 flex justify-end">
+          <button class="cursor-pointer mr-1 px-4 py-2 bg-white text-slate-400 border-none hover:bg-slate-200 uppercase tracking-wider font-light rounded-full cursor-pointer" x-on:click="inspectingJSON=false">
+            Go back
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- END INSPECT JSON -->
+
+    <!-- TOAST -->
+    <div class="bg-slate-800 w-full h-full absolute inset-0 flex items-center justify-center" x-show="toastEnabled === true">
+      <div class="bg-white px-8 pt-8 pb-8 w-96 h-auto rounded-2xl">
+        <div class="" x-text="toastText">
+        </div>
+      </div>
+    </div>
+    <!-- END TOAST -->
+  </div>
+
+  <script>
+    function cms() {
+      return {
+        addingKeyToThing: false,
+        addingKeyToList: false,
+        addingList: false,
+        addingThing: false,
+        c: '2mee84bc1tr',
+        cmsKey: '2mee84bc1tr',
+        cmsUrl: 'https://simplejsoncms.com/api/',
+        copyingKey: null,
+        currentSelection: null,
+        data: {},
+        inspectingJSON: false,
+        newKeyName: null,
+        newListAttributes: null,
+        newListName: '',
+        newThingName: null,
+        password: null,
+        renamingKey: null,
+        toastEnabled: false,
+        toastText: null,
+        zoomedIn: false,
+        zoomedInIndex: null,
+        zoomedInKey: null,
+        zoomedInValue: null,
+
+        async init () {
+          if (localStorage.getItem('cmsKey')) this.cmsKey = localStorage.getItem('cmsKey')
+          if (this.cmsKey) {
+            localStorage.setItem('cmsKey', this.cmsKey)
+            this.getData()
+          }
+        },
+
+        async addKeyToList () {
+          this.toast('Adding attribute to list...')
+          if (!this.newKeyName) return
+          this.data[this.currentSelection].map(o => o[this.newKeyName] = null)
+          this.addingKeyToList = false
+          this.newKeyName = null
+        },
+
+        async addKeyToThing () {
+          this.toast('Adding attribute to thing...')
+          if (!this.newKeyName) return
+          this.data[this.currentSelection][this.newKeyName] = null
+          this.addingKeyToThing = false
+          this.newKeyName = null
+        },
+
+        async addList () {
+          this.toast('Adding list...')
+          if (!this.newListName || !this.newListAttributes) return
+          this.data[this.newListName] = []
+          let attributes = this.newListAttributes.split(',')
+          let newObject = {}
+          attributes.forEach(a => { newObject[a.trim()] = null })
+          this.data[this.newListName].push(newObject)
+          this.currentSelection = this.newListName
+          this.newListName = null
+          this.newListAttributes = null
+          this.addingList = false
+        },
+
+        async addItem () {
+          this.toast('Adding item to list...')
+          const item = JSON.parse(JSON.stringify(this.data[this.currentSelection][0]))
+          Object.keys(item).map(k => item[k] = '')
+          this.data[this.currentSelection].push(item)
+        },
+
+        async addThing () {
+          this.toast('Adding new thing...')
+          if (!this.newThingName) return
+          this.data[this.newThingName] = {}
+          this.currentSelection = this.newThingName
+          this.newThingName = null
+          this.addingThing = false
+
+        },
+
+        copyKey () {
+          this.toast('Copying...')
+          if (this.data[this.copyingKey] && this.newKeyName) {
+            this.data[this.newKeyName] = JSON.parse(JSON.stringify(this.data[this.copyingKey]))
+            this.copyingKey = null
+            this.newKeyName = null
+          }
+        },
+
+        async deleteKey (key) {
+          this.toast('Deleting...')
+          delete this.data[key]
+          this.currentSelection = null
+        },
+
+        async deleteListKey (key) {
+          this.toast('Deleting list attribute...')
+          this.data[this.currentSelection].map(o => delete o[key])
+        },
+
+        async deleteThingKey (key) {
+          this.toast('Deleting thing attribute...')
+          delete this.data[this.currentSelection][key]
+        },
+
+        async deleteItem (index) {
+          this.toast('Deleting list item...')
+          this.data[this.currentSelection].splice(index, 1)
+        },
+
+        async getData () {
+          if (!this.cmsKey) return
+          this.toast('Getting data...')
+          let cmsData = await fetch(this.cmsUrl + this.cmsKey)
+          this.data = await cmsData.json()
+        },
+
+        handleKeydown () {
+          console.log('KEY DOWN')
+        },
+
+        renameKey () {
+          this.toast('Renaming attribute...')
+          if (this.data[this.renamingKey] && this.newKeyName) {
+            this.data[this.newKeyName] = JSON.parse(JSON.stringify(this.data[this.renamingKey]))
+            delete this.data[this.renamingKey]
+            this.renamingKey = null
+            this.newKeyName = null
+            this.currentSelection = null
+          }
+        },
+
+        async save () {
+          this.toast('Saving...')
+          const data = {
+            id: this.cmsKey,
+            json: this.data,
+            password: this.password
+          }
+          const options = {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+          const response = await fetch(this.cmsUrl + 'save', options)
+          const json = await response.json()
+          this.data = json.json
+        },
+
+        toast (toastText) {
+          this.toastText = toastText
+          this.toastEnabled = true
+          setTimeout(() => {
+            this.toastEnabled = false
+            this.toastText = null
+          }, 1000)
+        },
+
+        zoomIn (index, key) {
+          console.log('index', index);
+          console.log('key', key);
+          this.zoomedIn = true
+          this.zoomedInIndex = index
+          this.zoomedInKey = key
+          if (this.zoomedInIndex !== null) this.zoomedInValue = this.data[this.currentSelection][index][key]
+          else this.zoomedInValue = this.data[this.currentSelection][key]
+        },
+
+        zoomOut () {
+          if (this.zoomedInIndex !== null) this.data[this.currentSelection][this.zoomedInIndex][this.zoomedInKey] = this.zoomedInValue
+          else this.data[this.currentSelection][this.zoomedInKey] = this.zoomedInValue
+          this.zoomedIn = false
+          this.zoomedInIndex = null
+          this.zoomedInKey = null
+          this.zoomedInValue = null
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@unocss/runtime"></script>
+  <script src="//unpkg.com/alpinejs" defer></script>
+</body>
+</html>
